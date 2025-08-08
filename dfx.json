@@ -1,0 +1,17 @@
+{
+  "canisters": {
+    "factory-canister-backend": {
+      "candid": "src/factory-canister-backend/factory-canister-backend.did",
+      "package": "factory-canister-backend",
+      "type": "rust"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
