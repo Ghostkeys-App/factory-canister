@@ -1,17 +1,25 @@
-use candid::{encode_one, CandidType, Principal};
-use ic_cdk::{api::{call::call_with_payment128, canister_self, msg_caller}, management_canister::{CanisterSettings, CreateCanisterArgs, CreateCanisterResult, InstallChunkedCodeArgs}, query, storage::{stable_restore, stable_save}, update};
+use candid::{CandidType, Principal};
+use ic_cdk::{
+    api::{canister_self, msg_caller},
+    management_canister::{
+        create_canister_with_extra_cycles, install_code, CanisterSettings, CreateCanisterArgs,
+        CreateCanisterResult, InstallCodeArgs,
+    },
+    query,
+    storage::{stable_restore, stable_save},
+    update,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
-
-// Don't forget to call dfx canister deposit-cycles factory-canister-backend <amount>. 
-const CREATE_CYCLES: u128 = 30_000_000_000; 
+// Don't forget to call dfx canister deposit-cycles factory-canister-backend <amount>.
+const CREATE_CYCLES: u128 = 30_000_000_000;
 
 #[derive(Clone, Default, CandidType, Deserialize, Serialize)]
 struct FactoryState {
     owner_to_vault: BTreeMap<Principal, Principal>,
     last_create_nanos: BTreeMap<Principal, u64>,
-    min_create_interval_ns: u64, 
+    min_create_interval_ns: u64,
 }
 
 thread_local! {
@@ -44,43 +52,29 @@ async fn get_or_create_vault() -> Principal {
         reserved_cycles_limit: None,
         log_visibility: None,
         wasm_memory_limit: None,
-        wasm_memory_threshold: None
+        wasm_memory_threshold: None,
     };
 
-    let arg = (CreateCanisterArgs {
+    let arg = CreateCanisterArgs {
         settings: Some(settings),
-    },);
+    };
 
-    let (create_res,): (CreateCanisterResult,) = call_with_payment128(
-        Principal::management_canister(),
-        "create_canister",
-        arg,
-        CREATE_CYCLES,
-    )
-    .await
-    .expect("create_canister failed (insufficient cycles?)");
+    let create_res: CreateCanisterResult = create_canister_with_extra_cycles(&arg, CREATE_CYCLES)
+        .await
+        .expect("create_canister_with_extra_cycles failed | insufficient funds?");
 
     let vault_id = create_res.canister_id;
 
-    let init_arg: Vec<u8> = encode_one(user).expect("encode init arg");
-    let wasm_bytes: Vec<u8> = include_bytes!(env!("VAULT_WASM_PATH")).to_vec();
+    let wasm_bytes: Vec<u8> = include_bytes!(env!("VAULT_WASM_PATH")).to_vec(); // TODO: check if we can access binary of git repo
 
-    let install = InstallChunkedCodeArgs {
+    let install = InstallCodeArgs {
         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
-        target_canister: vault_id,
-        wasm_module_hash: wasm_bytes,
-        arg: init_arg,
-        store_canister: None,
-        chunk_hashes_list: Default::default()
+        canister_id: create_res.canister_id,
+        wasm_module: wasm_bytes,
+        arg: candid::encode_one(user).unwrap(),
     };
 
-    let _: () = ic_cdk::api::call::call(
-        Principal::management_canister(),
-        "install_code",
-        (install,),
-    )
-    .await
-    .expect("install_code failed");
+    let _: () = install_code(&install).await.expect("install_code failed");
 
     STATE.with(|s| s.borrow_mut().owner_to_vault.insert(user, vault_id));
 
