@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 // Don't forget to call dfx canister deposit-cycles factory-canister-backend <amount>.
-const CREATE_CYCLES: u128 = 30_000_000_000;
+const CREATE_CYCLES: u128 = 500_000_000_000;
 
 #[derive(Clone, Default, CandidType, Deserialize, Serialize)]
 struct FactoryState {
@@ -65,7 +65,7 @@ async fn get_or_create_vault() -> Principal {
 
     let vault_id = create_res.canister_id;
 
-    let wasm_bytes: Vec<u8> = include_bytes!(env!("VAULT_WASM_PATH")).to_vec(); // TODO: check if we can access binary of git repo
+    let wasm_bytes: Vec<u8> = include_bytes!("../../../target/wasm32-unknown-unknown/release/vault_canister_backend.wasm").to_vec(); // TODO: check if we can access binary of git repo
 
     let install = InstallCodeArgs {
         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
@@ -104,3 +104,5 @@ fn post_upgrade() {
     let (st,): (FactoryState,) = stable_restore().unwrap_or_default();
     STATE.with(|s| *s.borrow_mut() = st);
 }
+
+ic_cdk::export_candid!();
