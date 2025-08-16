@@ -1,3 +1,4 @@
 service : {
-    "greet": (text) -> (text) query;
+  get_or_create_vault : () -> (principal);
+  lookup_vault : (principal) -> (opt principal) query;
 }
