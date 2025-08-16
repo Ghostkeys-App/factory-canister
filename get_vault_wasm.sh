@@ -4,5 +4,7 @@
 
 gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/Ghostkeys-App/vault-canister/actions/artifacts/$(gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" /repos/Ghostkeys-App/vault-canister/actions/artifacts | jq .artifacts[0].id)/zip > ./vault_canister.zip
 
+[ -d ./target/wasm32-unknown-unknown/release/ ] || mkdir -p ./target/wasm32-unknown-unknown/release/
+
 unzip -o vault_canister.zip -d ./target/wasm32-unknown-unknown/release/
 rm vault_canister.zip
