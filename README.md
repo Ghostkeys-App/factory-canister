@@ -21,6 +21,15 @@ dfx help
 dfx canister --help
 ```
 
+## Acquiring vault canister wasm
+
+Install the following prerequisites:
+
+`sudo apt install gh -y`
+`gh auth login`
+
+These are required to acquire the latest wasm artifact of the user vault canister.
+
 ## Running the project locally
 
 If you want to test your project locally, you can use the following commands:

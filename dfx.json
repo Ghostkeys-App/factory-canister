@@ -19,6 +19,18 @@
           "name": "candid:service"
         }
       ]
+    },
+    "vault-canister-backend": {
+      "type": "custom",
+      "shrink": true,
+      "gzip": true,
+      "candid": "src/vault-canister-backend/vault-canister-backend.did",
+      "wasm": "target/wasm32-unknown-unknown/release/vault_canister_backend.wasm",
+      "build": [
+        "get_vault_wasm.sh",
+        "[ -d src/vault-canister-backend ] || mkdir src/vault-canister-backend",
+        "candid-extractor target/wasm32-unknown-unknown/release/vault_canister_backend.wasm > src/vault-canister-backend/vault-canister-backend.did"
+      ]
     }
   },
   "defaults": {
