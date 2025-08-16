@@ -23,3 +23,5 @@ dist/
 
 # environment variables
 .env
+
+src/vault-canister-backend/vault-canister-backend.did
