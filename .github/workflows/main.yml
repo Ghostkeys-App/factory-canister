@@ -1,0 +1,26 @@
+name: Build Factory Canister
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Add wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Checkout dfx-setup
+        uses: actions/checkout@v2
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+      - name: Confirm successfull dfx install
+        run: dfx --version
+      - name: start dfx 
+        run: dfx start --background --clean
+      - name: create all canisters
+        run: dfx canister create --all
+      - name: build all canisters
+        run: dfx build
+      - name: upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: factory_canister_backend
+          path: target/wasm32-unknown-unknown/release/factory_canister_backend.wasm
