@@ -4,6 +4,10 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   build:
     runs-on: [ubuntu-latest]
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Add wasm32 target
         run: rustup target add wasm32-unknown-unknown
