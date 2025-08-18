@@ -71,7 +71,7 @@ async fn get_or_create_vault() -> Principal {
         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
         canister_id: create_res.canister_id,
         wasm_module: wasm_bytes,
-        arg: candid::encode_one(user).unwrap(),
+        arg: candid::encode_args((user, canister_self())).unwrap(),
     };
 
     let _: () = install_code(&install).await.expect("install_code failed");
