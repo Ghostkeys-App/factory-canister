@@ -10,6 +10,8 @@ jobs:
     steps:
       - name: Add wasm32 target
         run: rustup target add wasm32-unknown-unknown
+      - name: Install candid-extractor
+        run: cargo install candid-extractor
       - name: Checkout dfx-setup
         uses: actions/checkout@v2
       - name: Install dfx
