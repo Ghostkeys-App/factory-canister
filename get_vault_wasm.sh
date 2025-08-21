@@ -8,3 +8,6 @@ gh api -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-1
 
 unzip -o vault_canister.zip -d ./target/wasm32-unknown-unknown/release/
 rm vault_canister.zip
+
+[ -d ./src/vault-canister-backend/ ] || mkdir -p ./src/vault-canister-backend/
+[ -d ./src/shared-vault-canister-backend/ ] || mkdir -p ./src/shared-vault-canister-backend/
