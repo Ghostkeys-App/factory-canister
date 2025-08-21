@@ -84,10 +84,16 @@ async fn get_or_create_vault() -> Principal {
         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
         canister_id: create_res.canister_id,
         wasm_module: wasm_bytes,
-        arg: candid::encode_args((user, canister_self())).unwrap(),
+        arg: Vec::default(),
     };
 
     let _: () = install_code(&install).await.expect("install_code failed");
+
+    let _ = Call::unbounded_wait(
+        vault_id,
+        "shared_canister_init",
+    ).with_args(&(user, canister_self())).await.expect("shared_canister_init failed");
+
 
     STATE.with(|s| s.borrow_mut().owner_to_vault.insert(user, vault_id));
 
@@ -180,8 +186,7 @@ async fn get_or_create_shared_vault() -> Principal {
 
     let this_can = canister_self();
     log(format!("Installing shared vault canister for user: {} with canister self: {}", user.to_text(), this_can.to_text()));
-    let arg: Vec<u8> = candid::encode_args((user, this_can)).unwrap();
-    log("unwrap succeeded".to_string());
+
     let install = InstallCodeArgs {
         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
         canister_id: create_res.canister_id,
