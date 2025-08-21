@@ -1,11 +1,11 @@
 use candid::{CandidType, Principal};
 use ic_cdk::{
     api::{canister_self, msg_caller}, call::Call, management_canister::{
-        create_canister_with_extra_cycles, deposit_cycles, install_code, update_settings, CanisterSettings, CreateCanisterArgs, CreateCanisterResult, DepositCyclesArgs, InstallCodeArgs, UpdateSettingsArgs
+        create_canister_with_extra_cycles, deposit_cycles, install_code, CanisterSettings, CreateCanisterArgs, CreateCanisterResult, DepositCyclesArgs, InstallCodeArgs
     }, query, storage::{stable_restore, stable_save}, update,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, time::Duration};
 
 // Don't forget to call dfx canister deposit-cycles factory-canister-backend <amount>.
 const CREATE_CYCLES: u128 = 500_000_000_000;
@@ -32,8 +32,7 @@ fn log(msg: String) {
     ic_cdk::println!("{}", msg);
 }
 
-#[ic_cdk::init]
-async fn init() {
+async fn init_create_shared_vault() {
     log("Creating a new shared vault".to_string());
 
     let settings = CanisterSettings {
@@ -70,20 +69,32 @@ async fn init() {
 
     let _: () = install_code(&install).await.expect("install_code failed");
 
-    // call shared_canister_init
-
     let _ = Call::unbounded_wait(
         vault_id,
         "shared_canister_init",
-    ).with_arg((this_can,)).await.expect("shared_canister_init failed");
+    ).with_arg((this_can,));
 
     STATE.with(|s| {
         let mut state = s.borrow_mut();
-        state.free_shared_vault = Some(vault_id)
+        state.free_shared_vault = Some(vault_id);
         state.known_shared_vaults.push(vault_id);
     });
+
+    log(format!("Created shared vault with ID: {}", vault_id.to_text()));
 }
 
+#[ic_cdk::init]
+fn init() {
+    log("Factory canister initialized".to_string());
+    ic_cdk_timers::set_timer(Duration::from_secs(1),  || {
+        ic_cdk::futures::spawn(async {
+            log("Running init_create_shared_vault".to_string());
+            let _ = init_create_shared_vault().await;
+            log("Completed init_create_shared_vault".to_string());
+        });
+    });
+    log("Set timer to create shared vault".to_string());
+}
 
 #[query]
 fn lookup_vault(owner: Principal) -> Option<Principal> {
@@ -105,6 +116,7 @@ fn get_shared_vault() -> Principal {
             });
         }
     })
+
 }
 
 #[update]
