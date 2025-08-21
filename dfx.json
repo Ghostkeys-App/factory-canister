@@ -23,7 +23,7 @@
         }
       ]
     },
-        "vault-canister-backend": {
+    "vault-canister-backend": {
       "candid": "src/vault-canister-backend/vault-canister-backend.did",
       "package": "vault-canister-backend",
       "type": "custom",
