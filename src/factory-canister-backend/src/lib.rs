@@ -196,7 +196,7 @@ async fn get_or_create_shared_vault() -> Principal {
     let _ = Call::unbounded_wait(
         vault_id,
         "shared_canister_init",
-    ).with_arg(arg).await;
+    ).with_args(&(user, this_can)).await.expect("shared_canister_init failed");
 
     STATE.with(|s| s.borrow_mut().owner_to_vault.insert(user, vault_id));
 
