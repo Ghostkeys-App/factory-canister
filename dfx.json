@@ -1,5 +1,21 @@
 {
   "canisters": {
+    "vault-canister-backend": {
+      "candid": "src/vault-canister-backend/vault-canister-backend.did",
+      "package": "vault-canister-backend",
+      "type": "custom",
+      "shrink": true,
+      "gzip": true,
+      "wasm": "target/wasm32-unknown-unknown/release/vault_canister_backend.wasm"
+    },
+    "shared-vault-canister-backend": {
+      "candid": "src/shared-vault-canister-backend/shared-vault-canister-backend.did",
+      "package": "shared-vault-canister-backend",
+      "type": "custom",
+      "shrink": true,
+      "gzip": true,
+      "wasm": "target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm"
+    },
     "factory-canister-backend": {
       "candid": "src/factory-canister-backend/factory-canister-backend.did",
       "package": "factory-canister-backend",
@@ -10,7 +26,9 @@
       "build": [
         "get_vault_wasm.sh",
         "cargo build --target wasm32-unknown-unknown --release -p factory-canister-backend --locked",
-        "candid-extractor target/wasm32-unknown-unknown/release/factory_canister_backend.wasm > src/factory-canister-backend/factory-canister-backend.did"
+        "candid-extractor target/wasm32-unknown-unknown/release/factory_canister_backend.wasm > src/factory-canister-backend/factory-canister-backend.did",
+        "candid-extractor target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm > src/shared-vault-canister-backend/shared-vault-canister-backend.did",
+        "candid-extractor target/wasm32-unknown-unknown/release/vault_canister_backend.wasm > src/vault-canister-backend/vault-canister-backend.did"
       ],
       "post_install": [
         "dfx canister start factory-canister-backend"

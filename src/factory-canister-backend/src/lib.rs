@@ -79,12 +79,12 @@ async fn get_or_create_vault() -> Principal {
     let vault_id = create_res.canister_id;
 
     let wasm_bytes: Vec<u8> = include_bytes!("../../../target/wasm32-unknown-unknown/release/vault_canister_backend.wasm").to_vec(); // TODO: check if we can access binary of git repo
-
+    
     let install = InstallCodeArgs {
         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
         canister_id: create_res.canister_id,
         wasm_module: wasm_bytes,
-        arg: candid::encode_args((user.to_text(), canister_self().to_text())).unwrap(),
+        arg: candid::encode_args((user, canister_self())).unwrap(),
     };
 
     let _: () = install_code(&install).await.expect("install_code failed");
@@ -146,9 +146,12 @@ async fn get_or_create_shared_vault() -> Principal {
     {
         // If there are existing shared vaults, we can use one of them.
         let vault_id = STATE.with(|s| s.borrow().shared_vaults_to_users.keys().next().cloned()).expect("No shared vaults available");
+        log(format!("Associating user {} to existing shared vault {}", user.to_text(), vault_id.to_text()));
         associate_user_to_shared_vault(vault_id, user).await;
         return vault_id
     }
+
+    log("Creating a new shared vault".to_string());
 
     throttle(&user);
 
@@ -175,14 +178,25 @@ async fn get_or_create_shared_vault() -> Principal {
 
     let wasm_bytes: Vec<u8> = include_bytes!("../../../target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm").to_vec();
 
+    let this_can = canister_self();
+    log(format!("Installing shared vault canister for user: {} with canister self: {}", user.to_text(), this_can.to_text()));
+    let arg: Vec<u8> = candid::encode_args((user, this_can)).unwrap();
+    log("unwrap succeeded".to_string());
     let install = InstallCodeArgs {
         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
         canister_id: create_res.canister_id,
         wasm_module: wasm_bytes,
-        arg: candid::encode_args((user.to_text(), canister_self().to_text())).unwrap(),
+        arg: Vec::default(),
     };
 
     let _: () = install_code(&install).await.expect("install_code failed");
+
+    // call shared_canister_init
+
+    let _ = Call::unbounded_wait(
+        vault_id,
+        "shared_canister_init",
+    ).with_arg(arg).await;
 
     STATE.with(|s| s.borrow_mut().owner_to_vault.insert(user, vault_id));
 
