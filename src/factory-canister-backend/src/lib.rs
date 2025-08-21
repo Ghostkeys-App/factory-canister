@@ -1,12 +1,8 @@
 use candid::{CandidType, Principal};
 use ic_cdk::{
-    api::{canister_self, msg_caller},
-    management_canister::{
-        create_canister_with_extra_cycles, deposit_cycles, install_code, CanisterSettings, CreateCanisterArgs, CreateCanisterResult, DepositCyclesArgs, InstallCodeArgs
-    },
-    query,
-    storage::{stable_restore, stable_save},
-    update,
+    api::{canister_self, msg_caller}, call::Call, management_canister::{
+        create_canister_with_extra_cycles, deposit_cycles, install_code, update_settings, CanisterSettings, CreateCanisterArgs, CreateCanisterResult, DepositCyclesArgs, InstallCodeArgs, UpdateSettingsArgs
+    }, query, storage::{stable_restore, stable_save}, update
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -100,11 +96,41 @@ async fn get_or_create_vault() -> Principal {
     vault_id
 }
 
-fn associate_user_to_shared_vault(vault_id: Principal, user: Principal) {
-    STATE.with(|s| {
+async fn associate_user_to_shared_vault(vault_id: Principal, user: Principal) {
+    let new_controllers = STATE.with(|s| {
         let mut st = s.borrow_mut();
         st.shared_vaults_to_users.entry(vault_id).or_default().push(user);
+
+        let mut new_controllers: Vec<Principal> = st.shared_vaults_to_users.get(&vault_id)
+            .map_or(vec![canister_self()], |users| {
+                users.iter().cloned().chain(std::iter::once(canister_self())).collect()
+            });
+        new_controllers.push(canister_self());
+
+        new_controllers
     });
+    let update_args : UpdateSettingsArgs = UpdateSettingsArgs {
+            canister_id: vault_id,
+            settings: CanisterSettings {
+                controllers: new_controllers.into(),
+                compute_allocation: None,
+                memory_allocation: None,
+                freezing_threshold: None,
+                reserved_cycles_limit: None,
+                log_visibility: None,
+                wasm_memory_limit: None,
+                wasm_memory_threshold: None,
+            },
+        };
+    update_settings(&update_args)
+        .await
+        .expect("Failed to update settings for shared vault");
+
+    // inform the canister that a new user has been added
+    let _ = Call::unbounded_wait(
+        vault_id,
+        "add_user",
+    ).with_arg( (user,)).await;
 }
 
 #[update]
@@ -120,7 +146,7 @@ async fn get_or_create_shared_vault() -> Principal {
     {
         // If there are existing shared vaults, we can use one of them.
         let vault_id = STATE.with(|s| s.borrow().shared_vaults_to_users.keys().next().cloned()).expect("No shared vaults available");
-        associate_user_to_shared_vault(vault_id, user);
+        associate_user_to_shared_vault(vault_id, user).await;
         return vault_id
     }
 
