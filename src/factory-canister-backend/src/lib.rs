@@ -96,6 +96,28 @@ fn init() {
     log("Set timer to create shared vault".to_string());
 }
 
+#[update]
+async fn notify_canister_at_capacity() {
+    let vault = msg_caller();
+    // If the free shared vault is the one notifying, or if there is no free shared vault, create a new one
+    STATE.with(|s| {
+        let mut st = s.borrow_mut();
+        if st.free_shared_vault.is_none() || st.free_shared_vault == Some(vault) {
+            st.free_shared_vault = None;
+            // Create a new shared vault
+            ic_cdk::futures::spawn(async {
+                log("Creating a new shared vault due to capacity notification".to_string());
+                let _ = init_create_shared_vault().await;
+                log("Completed creating new shared vault".to_string());
+            });
+        }
+        else {
+            log("notify_canister_at_capacity called by non-free shared vault, ignoring".to_string());
+            ic_cdk::trap("Only the free shared vault can notify at capacity");
+        }
+    });
+}
+
 #[query]
 fn lookup_vault(owner: Principal) -> Option<Principal> {
     STATE.with(|s| s.borrow().owner_to_vault.get(&owner).cloned())
