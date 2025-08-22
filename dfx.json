@@ -1,5 +1,35 @@
 {
   "canisters": {
+    "vault-canister-backend": {
+      "type": "custom",
+      "wasm": "target/wasm32-unknown-unknown/release/vault_canister_backend.wasm",
+      "candid": "src/vault-canister-backend/vault-canister-backend.did",
+      "build": [
+        "mkdir -p target/wasm32-unknown-unknown/release",
+        "curl -L -o target/wasm32-unknown-unknown/release/vault_canister_backend.wasm https://github.com/Ghostkeys-App/factory-canister/releases/download/factory-canister-dev-v0.3.0/vault_canister_backend.wasm",
+        "curl -L -o src/vault-canister-backend/vault-canister-backend.did https://github.com/Ghostkeys-App/factory-canister/releases/download/factory-canister-dev-v0.3.0/vault-canister-backend.did"
+      ],
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ]
+    },
+    "shared-vault-canister-backend": {
+      "type": "custom",
+      "wasm": "target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm",
+      "candid": "src/shared-vault-canister-backend/shared-vault-canister-backend.did",
+      "build": [
+        "mkdir -p target/wasm32-unknown-unknown/release",
+        "curl -L -o target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm https://github.com/Ghostkeys-App/factory-canister/releases/download/factory-canister-dev-v0.3.0/shared_vault_canister_backend.wasm",
+        "curl -L -o src/shared-vault-canister-backend/shared-vault-canister-backend.did https://github.com/Ghostkeys-App/factory-canister/releases/download/factory-canister-dev-v0.3.0/shared-vault-canister-backend.did"
+      ],
+      "metadata": [
+        {
+          "name": "candid:service"
+        }
+      ]
+    },
     "factory-canister-backend": {
       "candid": "src/factory-canister-backend/factory-canister-backend.did",
       "package": "factory-canister-backend",
@@ -8,7 +38,8 @@
       "gzip": true,
       "wasm": "target/wasm32-unknown-unknown/release/factory_canister_backend.wasm",
       "build": [
-        "get_vault_wasm.sh",
+        "dfx build vault-canister-backend",
+        "dfx build shared-vault-canister-backend",
         "cargo build --target wasm32-unknown-unknown --release -p factory-canister-backend --locked",
         "candid-extractor target/wasm32-unknown-unknown/release/factory_canister_backend.wasm > src/factory-canister-backend/factory-canister-backend.did",
         "candid-extractor target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm > src/shared-vault-canister-backend/shared-vault-canister-backend.did",
@@ -21,32 +52,10 @@
         {
           "name": "candid:service"
         }
-      ]
-    },
-    "vault-canister-backend": {
-      "candid": "src/vault-canister-backend/vault-canister-backend.did",
-      "package": "vault-canister-backend",
-      "type": "custom",
-      "shrink": true,
-      "gzip": true,
-      "wasm": "target/wasm32-unknown-unknown/release/vault_canister_backend.wasm",
-      "metadata": [
-        {
-          "name": "candid:service"
-        }
-      ]
-    },
-    "shared-vault-canister-backend": {
-      "candid": "src/shared-vault-canister-backend/shared-vault-canister-backend.did",
-      "package": "shared-vault-canister-backend",
-      "type": "custom",
-      "shrink": true,
-      "gzip": true,
-      "wasm": "target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm",
-      "metadata": [
-        {
-          "name": "candid:service"
-        }
+      ],
+      "dependencies": [
+        "shared-vault-canister-backend",
+        "vault-canister-backend"
       ]
     }
   },
