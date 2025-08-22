@@ -22,8 +22,10 @@ jobs:
         run: dfx start --background --clean
       - name: create all canisters
         run: dfx canister create --all
-      - name: build all canisters
-        run: dfx build
+      - name: build factory-canister first
+        run: dfx build factory-canister
+      - name: build other canisters
+        run: dfx build shared-vault-canister-backend && dfx build vault-canister-backend
       - name: upload factory wasm
         uses: actions/upload-artifact@v4
         with:
