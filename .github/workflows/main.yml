@@ -43,6 +43,9 @@ jobs:
           version: latest
       - name: Confirm dfx
         run: dfx --version
+      
+      - name: Start local network
+        run: dfx start --clean --background
 
       # ---- Resolve release tags from Ghostkeys-App/vault-canister ----
       - name: Resolve vault release tags
@@ -107,6 +110,9 @@ jobs:
 
           echo "Using VAULT_RELEASE_TAG=$TAG"
           echo "VAULT_RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+     
+      - name: Create canisters
+        run: dfx canister create --all
 
       - name: Build factory-canister-backend
         run: dfx build factory-canister-backend
