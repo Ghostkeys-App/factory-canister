@@ -161,61 +161,63 @@ fn register_shared_vault_user(user: Principal) -> Result<(), String> {
     })
 }
 
-#[update]
-async fn get_or_create_vault() -> Principal {
-    log("get_or_create_vault called".to_string());
-    let user = msg_caller();
 
-    if let Some(cid) = lookup_vault(user) {
-        return cid;
-    }
+// This is API call designed for Premium Users to have their own canisters
+// #[update]
+// async fn get_or_create_vault() -> Principal {
+//     log("get_or_create_vault called".to_string());
+//     let user = msg_caller();
 
-    throttle(&user);
+//     if let Some(cid) = lookup_vault(user) {
+//         return cid;
+//     }
 
-    let settings = CanisterSettings {
-        controllers: Some(vec![user, canister_self()]),
-        compute_allocation: None,
-        memory_allocation: None,
-        freezing_threshold: None,
-        reserved_cycles_limit: None,
-        log_visibility: None,
-        wasm_memory_limit: None,
-        wasm_memory_threshold: None,
-    };
+//     throttle(&user);
 
-    let arg = CreateCanisterArgs {
-        settings: Some(settings),
-    };
+//     let settings = CanisterSettings {
+//         controllers: Some(vec![user, canister_self()]),
+//         compute_allocation: None,
+//         memory_allocation: None,
+//         freezing_threshold: None,
+//         reserved_cycles_limit: None,
+//         log_visibility: None,
+//         wasm_memory_limit: None,
+//         wasm_memory_threshold: None,
+//     };
 
-    let create_res: CreateCanisterResult = create_canister_with_extra_cycles(&arg, CREATE_CYCLES)
-        .await
-        .expect("create_canister_with_extra_cycles failed | insufficient funds?");
+//     let arg = CreateCanisterArgs {
+//         settings: Some(settings),
+//     };
 
-    let vault_id = create_res.canister_id;
+//     let create_res: CreateCanisterResult = create_canister_with_extra_cycles(&arg, CREATE_CYCLES)
+//         .await
+//         .expect("create_canister_with_extra_cycles failed | insufficient funds?");
 
-    let wasm_bytes: Vec<u8> = include_bytes!("../../../target/wasm32-unknown-unknown/release/vault_canister_backend.wasm").to_vec(); // TODO: check if we can access binary of git repo
+//     let vault_id = create_res.canister_id;
+
+//     let wasm_bytes: Vec<u8> = include_bytes!("../../../target/wasm32-unknown-unknown/release/vault_canister_backend.wasm").to_vec(); // TODO: check if we can access binary of git repo
     
-    let install = InstallCodeArgs {
-        mode: ic_cdk::management_canister::CanisterInstallMode::Install,
-        canister_id: create_res.canister_id,
-        wasm_module: wasm_bytes,
-        arg: Vec::default(),
-    };
+//     let install = InstallCodeArgs {
+//         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
+//         canister_id: create_res.canister_id,
+//         wasm_module: wasm_bytes,
+//         arg: Vec::default(),
+//     };
 
-    let _: () = install_code(&install).await.expect("install_code failed");
+//     let _: () = install_code(&install).await.expect("install_code failed");
 
-    let _ = Call::unbounded_wait(
-        vault_id,
-        "shared_canister_init",
-    ).with_args(&(user, canister_self())).await.expect("shared_canister_init failed");
+//     let _ = Call::unbounded_wait(
+//         vault_id,
+//         "shared_canister_init",
+//     ).with_args(&(user, canister_self())).await.expect("shared_canister_init failed");
 
 
-    STATE.with(|s| s.borrow_mut().owner_to_vault.insert(user, vault_id));
+//     STATE.with(|s| s.borrow_mut().owner_to_vault.insert(user, vault_id));
 
-    log(format!("Created vault for user: {}", user.to_text()));
+//     log(format!("Created vault for user: {}", user.to_text()));
 
-    vault_id
-}
+//     vault_id
+// }
 
 fn throttle(user: &Principal) {
     let now = ic_cdk::api::time() as u64;
