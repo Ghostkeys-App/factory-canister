@@ -38,27 +38,3 @@ jobs:
           name: factory_canister_backend_did
           path: src/factory-canister-backend/factory-canister-backend.did
           compression-level: 0
-      - name: upload shared vault wasm
-        uses: actions/upload-artifact@v4
-        with:
-          name: shared_vault_canister_backend_wasm
-          path: target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm
-          compression-level: 6
-      - name: upload shared vault did
-        uses: actions/upload-artifact@v4
-        with:
-          name: shared_vault_canister_backend_did
-          path: src/shared-vault-canister-backend/shared-vault-canister-backend.did
-          compression-level: 0
-      - name: upload vault wasm
-        uses: actions/upload-artifact@v4
-        with:
-          name: vault_canister_backend_wasm
-          path: target/wasm32-unknown-unknown/release/vault_canister_backend.wasm
-          compression-level: 6
-      - name: upload vault did
-        uses: actions/upload-artifact@v4
-        with:
-          name: vault_canister_backend_did
-          path: src/vault-canister-backend/vault-canister-backend.did
-          compression-level: 0
