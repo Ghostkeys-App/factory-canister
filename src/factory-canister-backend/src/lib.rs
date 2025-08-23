@@ -69,10 +69,14 @@ async fn init_create_shared_vault() {
 
     let _: () = install_code(&install).await.expect("install_code failed");
 
+    let _this_can_result = Some(this_can);
+    // get admin principal from environment variable. if this fails then use this canister as admin
+    let admin_principal = Principal::from_text(std::env::var("SHARED_VAULT_ADMIN_PRINCIPAL").unwrap_or_else(|_| this_can.to_text())).unwrap();
+
     let _ = Call::unbounded_wait(
         vault_id,
         "shared_canister_init",
-    ).with_arg((this_can,));
+    ).with_args(&(admin_principal, this_can));
 
     STATE.with(|s| {
         let mut state = s.borrow_mut();
