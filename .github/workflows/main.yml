@@ -1,38 +1,129 @@
 name: Build Factory Canister
-on: [push, pull_request, workflow_dispatch]
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: "Which release channel to use for vault assets (prod | dev | any)"
+        required: false
+        default: "any"
+      override_tag:
+        description: "Explicit tag to use (overrides channel)"
+        required: false
+        default: ""
 
 jobs:
   build:
-    runs-on: [ubuntu-latest]
-    permissions: write-all
-    env:
-      GH_TOKEN: ${{ github.token }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+      id-token: write
+
     steps:
+      - name: Checkout (factory repo)
+        uses: actions/checkout@v4
+
+      - name: Install deps (jq, unzip, curl)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq unzip curl
+
       - name: Add wasm32 target
         run: rustup target add wasm32-unknown-unknown
+
       - name: Install candid-extractor
         run: cargo install candid-extractor
-      - name: Checkout dfx-setup
-        uses: actions/checkout@v2
+
       - name: Install dfx
         uses: dfinity/setup-dfx@main
-      - name: Confirm successfull dfx install
+        with:
+          version: latest
+      - name: Confirm dfx
         run: dfx --version
-      - name: start dfx 
-        run: dfx start --background --clean
-      - name: create all canisters
-        run: dfx canister create --all
-      - name: build factory-canister first
+
+      # ---- Resolve release tags from Ghostkeys-App/vault-canister ----
+      - name: Resolve vault release tags
+        id: tags
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          OWNER="Ghostkeys-App"
+          REPO="vault-canister"
+
+          # Fetch releases (includes prereleases) sorted by published_at descending
+          JSON="$(curl -fsSL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${OWNER}/${REPO}/releases?per_page=100")"
+
+          latest_any=$(echo "$JSON" | jq -r '
+            sort_by(.published_at) | reverse
+            | map(select(.draft == false))
+            | .[0].tag_name // empty')
+
+          latest_prod=$(echo "$JSON" | jq -r '
+            sort_by(.published_at) | reverse
+            | map(select(.draft == false and .prerelease == false))
+            | .[0].tag_name // empty')
+
+          # Prefer true prerelease; fallback to tag_name containing "dev"
+          latest_dev=$(echo "$JSON" | jq -r '
+            sort_by(.published_at) | reverse
+            | map(select(.draft == false and (.prerelease == true or (.tag_name|test("dev"; "i")))))
+            | .[0].tag_name // empty')
+
+          echo "any=${latest_any}"   >> "$GITHUB_OUTPUT"
+          echo "prod=${latest_prod}" >> "$GITHUB_OUTPUT"
+          echo "dev=${latest_dev}"   >> "$GITHUB_OUTPUT"
+
+      - name: Choose VAULT_RELEASE_TAG (override > channel > any)
+        run: |
+          set -euo pipefail
+          CH="${{ github.event.inputs.channel || 'any' }}"
+          OV="${{ github.event.inputs.override_tag || '' }}"
+          ANY="${{ steps.tags.outputs.any }}"
+          PROD="${{ steps.tags.outputs.prod }}"
+          DEV="${{ steps.tags.outputs.dev }}"
+
+          if [ -n "$OV" ]; then
+            TAG="$OV"
+          else
+            case "$CH" in
+              prod) TAG="$PROD" ;;
+              dev)  TAG="$DEV"  ;;
+              *)    TAG="$ANY"  ;;
+            esac
+          fi
+
+          if [ -z "$TAG" ]; then
+            echo "Could not resolve a release tag (channel=$CH, override=$OV)" >&2
+            echo "Resolved: any=$ANY prod=$PROD dev=$DEV" >&2
+            exit 1
+          fi
+
+          echo "Using VAULT_RELEASE_TAG=$TAG"
+          echo "VAULT_RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Build factory-canister-backend
         run: dfx build factory-canister-backend
-      - name: build other canisters
-        run: dfx build shared-vault-canister-backend && dfx build vault-canister-backend
-      - name: upload factory wasm
+
+      - name: Build vault placeholder canisters (optional)
+        run: |
+          dfx build shared-vault-canister-backend || true
+          dfx build vault-canister-backend || true
+
+      - name: Upload factory wasm
         uses: actions/upload-artifact@v4
         with:
           name: factory_canister_backend_wasm
           path: target/wasm32-unknown-unknown/release/factory_canister_backend.wasm
           compression-level: 6
-      - name: upload factory did
+
+      - name: Upload factory did
         uses: actions/upload-artifact@v4
         with:
           name: factory_canister_backend_did

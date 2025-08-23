@@ -3,6 +3,7 @@ service : () -> {
   get_or_create_vault : () -> (principal);
   get_shared_vault : () -> (principal) query;
   lookup_vault : (principal) -> (opt principal) query;
+  notify_canister_at_capacity : () -> ();
   register_shared_vault_user : (principal) -> (Result);
   top_up : () -> (Result);
 }
