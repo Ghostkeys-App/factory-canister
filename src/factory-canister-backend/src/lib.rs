@@ -35,8 +35,23 @@ fn log(msg: String) {
 async fn init_create_shared_vault() {
     log("Creating a new shared vault".to_string());
 
+    let mut controllers: Vec<Principal> = Vec::new();
+
+    let this_can = canister_self();
+    controllers.push(this_can);
+    // get admin principal from environment variable. if this fails then use this canister as admin
+    let admin_principal = Principal::from_text(std::env::var("SHARED_VAULT_ADMIN_PRINCIPAL").unwrap_or_else(|_| {
+        log("No SHARED_VAULT_ADMIN_PRINCIPAL env var found, using this canister as admin".to_string());
+        this_can.to_text()
+    })).unwrap();
+
+    if admin_principal != this_can
+    {
+        controllers.push(admin_principal);
+    }
+
     let settings = CanisterSettings {
-        controllers: Some(vec![canister_self()]),
+        controllers: Some(controllers),
         compute_allocation: None,
         memory_allocation: None,
         freezing_threshold: None,
@@ -58,7 +73,6 @@ async fn init_create_shared_vault() {
 
     let wasm_bytes: Vec<u8> = include_bytes!("../../../target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm").to_vec();
 
-    let this_can = canister_self();
 
     let install = InstallCodeArgs {
         mode: ic_cdk::management_canister::CanisterInstallMode::Install,
@@ -68,13 +82,6 @@ async fn init_create_shared_vault() {
     };
 
     let _: () = install_code(&install).await.expect("install_code failed");
-
-    // get admin principal from environment variable. if this fails then use this canister as admin
-    let admin_principal = Principal::from_text(std::env::var("SHARED_VAULT_ADMIN_PRINCIPAL").unwrap_or_else(|_| {
-        log("No SHARED_VAULT_ADMIN_PRINCIPAL env var found, using this canister as admin".to_string());
-        this_can.to_text()
-    })).unwrap();
-
     let _ = Call::unbounded_wait(
         vault_id,
         "shared_canister_init",
