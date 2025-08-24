@@ -16,15 +16,10 @@ To learn more before you start working with `factory-canister`, see the followin
 
 ### Pre-requisites
 
-First install the build pre-requisites - these are necessary to fetch the vault canister .wasm artifacts from github.
+First install the build pre-requisites:
+If you want to have control over spawned canisters add init_arg to dfx:
 
-Install the github api cli tool:
-
-`sudo apt install gh -y`
-
-Authenticate it with your github account using SSH:
-
-`gh auth login`
+`"init_arg": "(opt record { admin = opt principal \"\" })"`
 
 ### Running the project locally
 

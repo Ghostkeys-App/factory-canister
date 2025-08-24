@@ -1,5 +1,7 @@
+type InitArgs = record { admin : opt principal };
 type Result = variant { Ok; Err : text };
-service : () -> {
+service : (opt InitArgs) -> {
+  get_controlled_canister_ids : () -> (vec principal) query;
   get_shared_vault : () -> (principal) query;
   lookup_vault : (principal) -> (opt principal) query;
   notify_canister_at_capacity : () -> ();

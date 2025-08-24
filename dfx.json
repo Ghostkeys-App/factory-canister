@@ -17,32 +17,6 @@
           "name": "candid:service"
         }
       ]
-    },
-    "vault-canister-backend": {
-      "type": "custom",
-      "package": "vault-canister-backend",
-      "candid": "src/vault-canister-backend/vault-canister-backend.did",
-      "wasm": "target/wasm32-unknown-unknown/release/vault_canister_backend.wasm",
-      "shrink": true,
-      "gzip": true,
-      "metadata": [
-        {
-          "name": "candid:service"
-        }
-      ]
-    },
-    "shared-vault-canister-backend": {
-      "type": "custom",
-      "package": "shared-vault-canister-backend",
-      "candid": "src/shared-vault-canister-backend/shared-vault-canister-backend.did",
-      "wasm": "target/wasm32-unknown-unknown/release/shared_vault_canister_backend.wasm",
-      "shrink": true,
-      "gzip": true,
-      "metadata": [
-        {
-          "name": "candid:service"
-        }
-      ]
     }
   },
   "defaults": {
