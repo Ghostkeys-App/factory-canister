@@ -218,6 +218,12 @@ fn register_shared_vault_user(user: Principal) -> Result<(), String> {
 }
 
 #[query]
+fn user_caller_exists() -> bool {
+    let caller = msg_caller();
+    STATE.with(|s| s.borrow().users_to_shared_vault.contains_key(&caller))
+}
+
+#[query]
 fn get_controlled_canister_ids() -> Vec<Principal> {
     STATE.with(|s| s.borrow().known_shared_vaults.clone())
 }

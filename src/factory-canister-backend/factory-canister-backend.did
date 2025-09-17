@@ -7,4 +7,5 @@ service : (opt InitArgs) -> {
   notify_canister_at_capacity : () -> ();
   register_shared_vault_user : (principal) -> (Result);
   top_up : () -> (Result);
+  user_caller_exists : () -> (bool) query;
 }
