@@ -1,6 +1,7 @@
 type InitArgs = record { admin : opt principal };
 type Result = variant { Ok; Err : text };
 service : (opt InitArgs) -> {
+  delete_user : () -> (Result);
   get_controlled_canister_ids : () -> (vec principal) query;
   get_shared_vault : () -> (principal) query;
   lookup_vault : (principal) -> (opt principal) query;

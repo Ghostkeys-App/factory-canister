@@ -217,6 +217,23 @@ fn register_shared_vault_user(user: Principal) -> Result<(), String> {
     })
 }
 
+#[update]
+fn delete_user() -> Result<(), String> {
+    let user_id = msg_caller();
+    STATE.with(|s| {
+        let mut st = s.borrow_mut();
+
+        if !st.users_to_shared_vault.contains_key(&user_id) {
+            ic_cdk::trap("User not recognised".to_string());
+        }
+        let vault = st.users_to_shared_vault.get(&user_id).unwrap().clone();
+        st.users_to_shared_vault.remove(&user_id);
+
+        Call::unbounded_wait(vault, "purge_user_data");
+        Ok(())
+    })
+}
+
 #[query]
 fn get_controlled_canister_ids() -> Vec<Principal> {
     STATE.with(|s| s.borrow().known_shared_vaults.clone())
